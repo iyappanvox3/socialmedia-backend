@@ -10,7 +10,7 @@ class YoutubeService {
   getOAuth2Client() {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri ='https://socialmedia-backend-jkq6o5nz2-voxlom1.vercel.app/oauth/callback';
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/youtube/oauth/callback';
 
     return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
   }
@@ -150,9 +150,9 @@ class YoutubeService {
         try {
           const promptTopic = topic || (title && title.trim().length > 0 ? title : path.basename(videoFile.originalname, path.extname(videoFile.originalname)));
           console.log(`[AI AUTO-PILOT]: Auto-generating metadata & thumbnail for topic "${promptTopic}"...`);
-          
+
           const aiResult = await geminiService.generateAllInOne({ topic: promptTopic, platform: 'YouTube' });
-          
+
           effectiveTitle = aiResult.title;
           effectiveDescription = `${aiResult.description}\n\n${aiResult.hashtags}`;
           effectiveTags = aiResult.hashtags.replace(/#/g, '').replace(/\s+/g, ',');

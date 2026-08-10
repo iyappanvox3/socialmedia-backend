@@ -1,13 +1,25 @@
 const { Pool } = require('pg');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
+const connectionString = process.env.DATABASE_URL;
+
+const pool = connectionString
+  ? new Pool({
+      connectionString,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    })
+  : {
+      query: async () => {
+        throw new Error('DATABASE_URL is not set in environment variables.');
+      },
+    };
 
 const initDb = async () => {
+  if (!connectionString) {
+    console.warn('[DB INIT WARNING]: DATABASE_URL is not configured in Vercel Environment Variables.');
+    return;
+  }
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -33,7 +45,7 @@ const initDb = async () => {
     `);
     console.log('[DB INITIALIZED]: "users" and "youtube_tokens" tables ready');
   } catch (err) {
-    console.error('[DB INIT ERROR]: Failed to initialize PostgreSQL users table:', err.message);
+    console.error('[DB INIT ERROR]: Failed to initialize PostgreSQL tables:', err.message);
   }
 };
 

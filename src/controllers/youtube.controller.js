@@ -3,7 +3,11 @@ const youtubeService = require('../services/youtube.service');
 class YoutubeController {
   getAuthUrl(req, res) {
     const { username } = req.query;
-    const url = youtubeService.getAuthUrl(username || 'User');
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const host = req.get('host');
+    const dynamicRedirectUri = process.env.GOOGLE_REDIRECT_URI || `${protocol}://${host}/api/youtube/oauth/callback`;
+
+    const url = youtubeService.getAuthUrl(username || 'User', dynamicRedirectUri);
     return res.json({ success: true, url });
   }
 
@@ -15,7 +19,11 @@ class YoutubeController {
     }
 
     try {
-      const result = await youtubeService.handleOAuthCallback(code, username || 'User');
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+      const host = req.get('host');
+      const dynamicRedirectUri = process.env.GOOGLE_REDIRECT_URI || `${protocol}://${host}/api/youtube/oauth/callback`;
+
+      const result = await youtubeService.handleOAuthCallback(code, username || 'User', dynamicRedirectUri);
       return res.send(`
         <! residential html>
         <html>

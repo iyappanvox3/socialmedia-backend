@@ -7,16 +7,16 @@ const { pool } = require('../config/db');
 const inMemoryTokenStore = new Map();
 
 class YoutubeService {
-  getOAuth2Client() {
+  getOAuth2Client(customRedirectUri = null) {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/youtube/oauth/callback';
+    const redirectUri = customRedirectUri || process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/youtube/oauth/callback';
 
     return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
   }
 
-  getAuthUrl(username = 'User') {
-    const oauth2Client = this.getOAuth2Client();
+  getAuthUrl(username = 'User', customRedirectUri = null) {
+    const oauth2Client = this.getOAuth2Client(customRedirectUri);
     const scopes = [
       'https://www.googleapis.com/auth/youtube.upload',
       'https://www.googleapis.com/auth/youtube.readonly',
@@ -31,9 +31,9 @@ class YoutubeService {
     });
   }
 
-  async handleOAuthCallback(code, username = 'User') {
+  async handleOAuthCallback(code, username = 'User', customRedirectUri = null) {
     try {
-      const oauth2Client = this.getOAuth2Client();
+      const oauth2Client = this.getOAuth2Client(customRedirectUri);
       const { tokens } = await oauth2Client.getToken(code);
       oauth2Client.setCredentials(tokens);
 

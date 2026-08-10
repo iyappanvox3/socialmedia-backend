@@ -10,7 +10,7 @@ class YoutubeService {
   getOAuth2Client() {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'https://socialmedia-backend-jkq6o5nz2-voxlom1.vercel.app/oauth/callback';
+    const redirectUri ='https://socialmedia-backend-jkq6o5nz2-voxlom1.vercel.app/oauth/callback';
 
     return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
   }

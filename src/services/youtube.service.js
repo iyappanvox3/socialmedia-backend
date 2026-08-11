@@ -118,7 +118,44 @@ class YoutubeService {
         tokenData = inMemoryTokenStore.get(username);
       }
 
-      if (tokenData && (tokenData.access_token || tokenData.accessToken)) {
+      if (tokenData && (tokenData.refresh_token || tokenData.refreshToken)) {
+        const refreshToken = tokenData.refresh_token || tokenData.refreshToken;
+        const accessToken = tokenData.access_token || tokenData.accessToken;
+
+        // FULL REFRESH TOKEN FLOW ON APP OPEN
+        try {
+          const oauth2Client = this.getOAuth2Client();
+          oauth2Client.setCredentials({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          console.log(`[YOUTUBE APP OPEN REFRESH]: Auto-refreshing 1-hour access_token for user "${username}"...`);
+          const refreshRes = await oauth2Client.refreshAccessToken();
+          const newTokens = refreshRes.credentials;
+
+          if (newTokens && newTokens.access_token) {
+            try {
+              await pool.query(
+                'UPDATE youtube_tokens SET access_token = $1, updated_at = CURRENT_TIMESTAMP WHERE username = $2',
+                [newTokens.access_token, username]
+              );
+              console.log('[YOUTUBE APP OPEN REFRESH SUCCESS]: Updated fresh access_token in DB!');
+            } catch (updateErr) {
+              console.warn('[YOUTUBE DB UPDATE WARNING]:', updateErr.message);
+            }
+          }
+        } catch (refreshErr) {
+          console.warn('[YOUTUBE REFRESH WARNING]: App open background refresh failed:', refreshErr.message);
+        }
+
+        return {
+          isConnected: true,
+          channelId: tokenData.channel_id || tokenData.channelId || 'YouTube Channel',
+          channelTitle: tokenData.channel_title || tokenData.channelTitle || 'Connected YouTube Channel',
+          refreshed: true,
+        };
+      } else if (tokenData && (tokenData.access_token || tokenData.accessToken)) {
         return {
           isConnected: true,
           channelId: tokenData.channel_id || tokenData.channelId || 'YouTube Channel',

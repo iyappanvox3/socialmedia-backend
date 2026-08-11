@@ -33,7 +33,7 @@ class YoutubeController {
       console.log(`[YOUTUBE OAUTH CALLBACK]: Exchanging code using redirectUri -> "${dynamicRedirectUri}"`);
       const result = await youtubeService.handleOAuthCallback(code, username || 'User', dynamicRedirectUri);
       return res.send(`
-        <! residential html>
+        <!DOCTYPE html>
         <html>
         <head>
           <title>YouTube Connected</title>
@@ -97,6 +97,11 @@ class YoutubeController {
         youtubeVideoUrl: result.youtubeVideoUrl,
         title: result.title,
       });
+    } catch (err) {
+      return res.status(err.statusCode || 400).json({
+        error: err.message,
+        isTokenMissing: err.isTokenMissing || false,
+        isTokenExpired: err.isTokenExpired || false,
         solution: err.solution,
       });
     }

@@ -1,4 +1,5 @@
 const { google } = require('googleapis');
+const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { pool } = require('../config/db');
@@ -328,6 +329,8 @@ class YoutubeService {
         : err.message;
       throw customError;
     }
+  }
+
   async initiateResumableUpload({ username = 'User', title, description, tags, privacyStatus, fileSize, mimeType = 'video/mp4', autoGenerateAI = false, topic }) {
     let effectiveTitle = title;
     let effectiveDescription = description;

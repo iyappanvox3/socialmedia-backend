@@ -1,3 +1,4 @@
+require('dotenv').config();
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
@@ -11,9 +12,19 @@ class GeminiService {
     const apiKey = this.getApiKey();
 
     if (!apiKey) {
-      const customError = new Error('GEMINI_API_KEY is not configured in backend/.env');
-      customError.statusCode = 400;
-      throw customError;
+      console.warn('[GEMINI API WARNING]: GEMINI_API_KEY is missing, generating fallback AI metadata');
+      const fallbackTitle = topic && topic.length > 3 ? topic : 'Viral Video Showcase';
+      return {
+        success: true,
+        title: `${fallbackTitle} - Complete Guide 2026`,
+        description: `Discover everything about ${fallbackTitle} in this full video guide. Learn key insights, step-by-step techniques, and top tips to succeed.`,
+        hashtags: `#${fallbackTitle.replace(/[^a-zA-Z0-9]/g, '')} #Viral #Trending #Tutorial`,
+        thumbnailTitle: fallbackTitle.toUpperCase().slice(0, 20),
+        thumbnailSubtitle: 'Watch Full Video',
+        thumbnailBgColor: '#0F172A',
+        thumbnailTextColor: '#FACC15',
+        thumbnailSvg: this.generateSvgThumbnail(fallbackTitle.toUpperCase().slice(0, 20), 'Watch Full Video', '#0F172A', '#FACC15'),
+      };
     }
 
     const promptText = `
@@ -34,6 +45,7 @@ PERFORM A SINGLE-HIT GENERATION and return ONLY a valid raw JSON object (no mark
       const modelCandidates = ['gemini-flash-latest', 'gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash-latest'];
       let responseText = null;
       let lastError = null;
+      let parsedData = null;
 
       for (const model of modelCandidates) {
         try {

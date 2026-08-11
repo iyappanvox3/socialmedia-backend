@@ -3,10 +3,14 @@ const youtubeService = require('../services/youtube.service');
 class YoutubeController {
   getAuthUrl(req, res) {
     const { username } = req.query;
+    const host = req.headers['x-forwarded-host'] || req.get('host');
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-    const host = req.get('host');
-    const dynamicRedirectUri = process.env.GOOGLE_REDIRECT_URI || `${protocol}://${host}/api/youtube/oauth/callback`;
+    
+    const dynamicRedirectUri = process.env.GOOGLE_REDIRECT_URI && process.env.GOOGLE_REDIRECT_URI.trim().length > 0
+      ? process.env.GOOGLE_REDIRECT_URI.trim()
+      : `${protocol}://${host}/api/youtube/oauth/callback`;
 
+    console.log(`[YOUTUBE AUTH URL]: Generated with redirectUri -> "${dynamicRedirectUri}"`);
     const url = youtubeService.getAuthUrl(username || 'User', dynamicRedirectUri);
     return res.json({ success: true, url });
   }
@@ -19,10 +23,14 @@ class YoutubeController {
     }
 
     try {
+      const host = req.headers['x-forwarded-host'] || req.get('host');
       const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-      const host = req.get('host');
-      const dynamicRedirectUri = process.env.GOOGLE_REDIRECT_URI || `${protocol}://${host}/api/youtube/oauth/callback`;
 
+      const dynamicRedirectUri = process.env.GOOGLE_REDIRECT_URI && process.env.GOOGLE_REDIRECT_URI.trim().length > 0
+        ? process.env.GOOGLE_REDIRECT_URI.trim()
+        : `${protocol}://${host}/api/youtube/oauth/callback`;
+
+      console.log(`[YOUTUBE OAUTH CALLBACK]: Exchanging code using redirectUri -> "${dynamicRedirectUri}"`);
       const result = await youtubeService.handleOAuthCallback(code, username || 'User', dynamicRedirectUri);
       return res.send(`
         <! residential html>
@@ -88,6 +96,34 @@ class YoutubeController {
         videoId: result.videoId,
         youtubeVideoUrl: result.youtubeVideoUrl,
         title: result.title,
+      });
+        solution: err.solution,
+      });
+    }
+  }
+
+  async initResumableUpload(req, res) {
+    const { username, title, description, tags, privacyStatus, fileSize, mimeType, autoGenerateAI, topic } = req.body;
+    try {
+      const result = await youtubeService.initiateResumableUpload({
+        username,
+        title,
+        description,
+        tags,
+        privacyStatus,
+        fileSize,
+        mimeType,
+        autoGenerateAI: autoGenerateAI === 'true' || autoGenerateAI === true,
+        topic,
+      });
+
+      return res.json({
+        success: true,
+        uploadUrl: result.uploadUrl,
+        accessToken: result.accessToken,
+        title: result.title,
+        description: result.description,
+        tags: result.tags,
       });
     } catch (err) {
       return res.status(err.statusCode || 400).json({

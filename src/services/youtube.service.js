@@ -328,6 +328,135 @@ class YoutubeService {
         : err.message;
       throw customError;
     }
+  async initiateResumableUpload({ username = 'User', title, description, tags, privacyStatus, fileSize, mimeType = 'video/mp4', autoGenerateAI = false, topic }) {
+    let effectiveTitle = title;
+    let effectiveDescription = description;
+    let effectiveTags = tags;
+
+    // AI Metadata Auto-Generation
+    if (autoGenerateAI === true || autoGenerateAI === 'true' || (!title && !description)) {
+      try {
+        const geminiService = require('./gemini.service');
+        const promptTopic = topic || (title && title.trim().length > 0 ? title : 'Viral Video Showcase');
+        console.log(`[RESUMABLE AI AUTO-PILOT]: Generating metadata for topic "${promptTopic}"...`);
+
+        const aiResult = await geminiService.generateAllInOne({ topic: promptTopic, platform: 'YouTube' });
+        effectiveTitle = aiResult.title;
+        effectiveDescription = `${aiResult.description}\n\n${aiResult.hashtags}`;
+        effectiveTags = aiResult.hashtags.replace(/#/g, '').replace(/\s+/g, ',');
+      } catch (aiErr) {
+        console.warn('[RESUMABLE AI FALLBACK]:', aiErr.message);
+        if (!effectiveTitle) effectiveTitle = 'New YouTube Video';
+      }
+    }
+
+    // Get & Refresh Tokens
+    let effectiveAccessToken = null;
+    let effectiveRefreshToken = null;
+
+    try {
+      const res = await pool.query(
+        'SELECT access_token, refresh_token FROM youtube_tokens WHERE username = $1',
+        [username]
+      );
+      if (res.rows.length > 0) {
+        effectiveAccessToken = res.rows[0].access_token;
+        effectiveRefreshToken = res.rows[0].refresh_token;
+      }
+    } catch (dbErr) {
+      const mem = inMemoryTokenStore.get(username);
+      if (mem) {
+        effectiveAccessToken = mem.accessToken;
+        effectiveRefreshToken = mem.refreshToken;
+      }
+    }
+
+    if (!effectiveAccessToken && inMemoryTokenStore.has(username)) {
+      const mem = inMemoryTokenStore.get(username);
+      effectiveAccessToken = mem.accessToken;
+      effectiveRefreshToken = mem.refreshToken;
+    }
+
+    const oauth2Client = this.getOAuth2Client();
+    oauth2Client.setCredentials({
+      access_token: effectiveAccessToken || undefined,
+      refresh_token: effectiveRefreshToken || undefined,
+    });
+
+    if (effectiveRefreshToken) {
+      try {
+        const refreshRes = await oauth2Client.refreshAccessToken();
+        const newTokens = refreshRes.credentials;
+        if (newTokens && newTokens.access_token) {
+          effectiveAccessToken = newTokens.access_token;
+          oauth2Client.setCredentials(newTokens);
+          try {
+            await pool.query(
+              'UPDATE youtube_tokens SET access_token = $1, updated_at = CURRENT_TIMESTAMP WHERE username = $2',
+              [newTokens.access_token, username]
+            );
+          } catch (_) {}
+        }
+      } catch (refreshErr) {
+        console.warn('[RESUMABLE TOKEN REFRESH WARNING]:', refreshErr.message);
+      }
+    }
+
+    if (!effectiveAccessToken) {
+      const customError = new Error('No YouTube Access Token found. Please connect your YouTube account using Google OAuth first.');
+      customError.statusCode = 401;
+      customError.isTokenMissing = true;
+      customError.solution = 'Tap "Connect YouTube Channel" to log in with your Google account and grant YouTube permissions.';
+      throw customError;
+    }
+
+    const parsedTags = effectiveTags
+      ? (Array.isArray(effectiveTags) ? effectiveTags : effectiveTags.split(',').map(t => t.trim()))
+      : [];
+
+    const requestBody = {
+      snippet: {
+        title: effectiveTitle || 'New Video Post',
+        description: effectiveDescription || '',
+        tags: parsedTags,
+        categoryId: '22',
+      },
+      status: {
+        privacyStatus: privacyStatus || 'public',
+        selfDeclaredMadeForKids: false,
+      },
+    };
+
+    const headers = {
+      'Authorization': `Bearer ${effectiveAccessToken}`,
+      'Content-Type': 'application/json; charset=UTF-8',
+      'X-Upload-Content-Type': mimeType || 'video/mp4',
+    };
+    if (fileSize) {
+      headers['X-Upload-Content-Length'] = String(fileSize);
+    }
+
+    console.log(`[YOUTUBE RESUMABLE INIT]: Requesting session URL for video "${effectiveTitle}"...`);
+    const response = await axios.post(
+      'https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status',
+      requestBody,
+      { headers }
+    );
+
+    const uploadUrl = response.headers['location'];
+    if (!uploadUrl) {
+      throw new Error('Google YouTube API did not return a valid resumable upload location header.');
+    }
+
+    console.log(`[YOUTUBE RESUMABLE INIT SUCCESS]: Location header URL created successfully!`);
+
+    return {
+      uploadUrl,
+      accessToken: effectiveAccessToken,
+      title: effectiveTitle,
+      description: effectiveDescription,
+      tags: effectiveTags,
+    };
   }
 }
 

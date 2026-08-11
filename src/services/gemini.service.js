@@ -12,33 +12,33 @@ class GeminiService {
     const apiKey = this.getApiKey();
 
     if (!apiKey) {
-      console.warn('[GEMINI API WARNING]: GEMINI_API_KEY is missing, generating fallback AI metadata');
-      const fallbackTitle = topic && topic.length > 3 ? topic : 'Viral Video Showcase';
+      console.warn('[GEMINI API WARNING]: GEMINI_API_KEY is missing, generating fallback Tamil AI metadata');
+      const fallbackTitle = topic && topic.length > 3 ? topic : 'பிரபலமான வீடியோ';
       return {
         success: true,
-        title: `${fallbackTitle} - Complete Guide 2026`,
-        description: `Discover everything about ${fallbackTitle} in this full video guide. Learn key insights, step-by-step techniques, and top tips to succeed.`,
-        hashtags: `#${fallbackTitle.replace(/[^a-zA-Z0-9]/g, '')} #Viral #Trending #Tutorial`,
-        thumbnailTitle: fallbackTitle.toUpperCase().slice(0, 20),
-        thumbnailSubtitle: 'Watch Full Video',
+        title: `${fallbackTitle} - தமிழ் முழு விளக்கம் 2026`,
+        description: `${fallbackTitle} பற்றிய அனைத்து முக்கியமான தகவல்களையும் இந்த வீடியோவில் விரிவாகக் காணலாம். சிறந்த குறிப்புகள் மற்றும் தகவல்கள் சேர்க்கப்பட்டுள்ளன.`,
+        hashtags: `#${fallbackTitle.replace(/[^a-zA-Z0-9]/g, '')} #தமிழ் #Tamil #Viral #Trending`,
+        thumbnailTitle: 'தமிழ் விளக்கம்',
+        thumbnailSubtitle: 'முழு தகவல் 2026',
         thumbnailBgColor: '#0F172A',
         thumbnailTextColor: '#FACC15',
-        thumbnailSvg: this.generateSvgThumbnail(fallbackTitle.toUpperCase().slice(0, 20), 'Watch Full Video', '#0F172A', '#FACC15'),
+        thumbnailSvg: this.generateSvgThumbnail('தமிழ் விளக்கம்', 'முழு தகவல் 2026', '#0F172A', '#FACC15'),
       };
     }
 
     const promptText = `
-You are a top-tier viral social media strategist and AI content creator.
-Generate optimized video metadata and a visual thumbnail concept for topic: "${topic}" tailored for platform: "${platform}".
+You are a top-tier viral social media strategist specializing in Tamil (தமிழ்) digital content creation.
+Analyze the video topic: "${topic}" for platform: "${platform}".
 
 PERFORM A SINGLE-HIT GENERATION and return ONLY a valid raw JSON object (no markdown, no backticks) with these exact keys:
-1. "title": Catchy, high-CTR, SEO-optimized title (under 70 chars).
-2. "description": Engaging multi-paragraph description summarizing the topic.
-3. "hashtags": 5-8 trending, relevant hashtags formatted as a single string (e.g. "#Flutter #Coding #Viral #Tech").
-4. "thumbnailTitle": Bold 2-4 word headline text for the video thumbnail banner (e.g. "BUILD APPS FAST").
-5. "thumbnailSubtitle": Secondary subtitle text for the thumbnail (e.g. "Complete 2026 Guide").
-6. "thumbnailBgColor": Primary hex color for thumbnail background (e.g. "#FF0000" or "#1E293B" or "#0F172A").
-7. "thumbnailTextColor": Accent text hex color (e.g. "#FFFFFF" or "#FACC15").
+1. "title": Catchy, high-CTR, SEO-optimized title strictly in TAMIL (தமிழ்) language (under 70 chars, e.g. "நதி நீர் இணைப்பு திட்ட உண்மையின் பின்னணி").
+2. "description": Engaging multi-paragraph description strictly in TAMIL (தமிழ்) language summarizing the topic for Tamil audience.
+3. "hashtags": 5-8 trending hashtags including Tamil and English tags (e.g. "#தமிழ் #Tamil #Viral #Trending #Video").
+4. "thumbnailTitle": Bold 2-4 word headline text in TAMIL (தமிழ்) script for the thumbnail banner (e.g. "முழுமையான விளக்கம்").
+5. "thumbnailSubtitle": Secondary subtitle text in Tamil or English (e.g. "முழு தகவல் 2026").
+6. "thumbnailBgColor": Primary hex color for thumbnail background (e.g. "#0F172A" or "#FF0000" or "#1E1B4B").
+7. "thumbnailTextColor": Accent text hex color (e.g. "#FACC15" or "#FFFFFF").
 `;
 
     try {
@@ -49,7 +49,7 @@ PERFORM A SINGLE-HIT GENERATION and return ONLY a valid raw JSON object (no mark
 
       for (const model of modelCandidates) {
         try {
-          console.log(`[GEMINI AI SINGLE-HIT]: Requesting model "${model}" for topic "${topic}"...`);
+          console.log(`[GEMINI AI TAMIL SINGLE-HIT]: Requesting model "${model}" for topic "${topic}"...`);
           const response = await axios.post(
             `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
             {
@@ -68,7 +68,7 @@ PERFORM A SINGLE-HIT GENERATION and return ONLY a valid raw JSON object (no mark
 
           responseText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
           if (responseText) {
-            console.log(`[GEMINI AI SUCCESS]: Model "${model}" responded successfully!`);
+            console.log(`[GEMINI AI SUCCESS]: Model "${model}" responded with Tamil content successfully!`);
             break;
           }
         } catch (err) {
@@ -78,14 +78,14 @@ PERFORM A SINGLE-HIT GENERATION and return ONLY a valid raw JSON object (no mark
       }
 
       if (!responseText) {
-        console.warn('[GEMINI API FALLBACK]: All model candidates failed, generating fallback AI metadata');
-        const fallbackTitle = topic.length > 5 ? topic : 'Viral Video Showcase';
+        console.warn('[GEMINI API FALLBACK]: All model candidates failed, generating fallback Tamil AI metadata');
+        const fallbackTitle = topic.length > 3 ? topic : 'பிரபலமான வீடியோ';
         parsedData = {
-          title: `${fallbackTitle} - Complete Guide 2026`,
-          description: `Discover everything about ${fallbackTitle} in this full video guide. Learn the key insights, step-by-step techniques, and top tips to succeed.`,
-          hashtags: `#${fallbackTitle.replace(/[^a-zA-Z0-9]/g, '')} #Viral #Trending #Tutorial`,
-          thumbnailTitle: fallbackTitle.toUpperCase().slice(0, 20),
-          thumbnailSubtitle: 'Watch Full Video',
+          title: `${fallbackTitle} - தமிழ் முழு விளக்கம் 2026`,
+          description: `${fallbackTitle} பற்றிய அனைத்து முக்கியமான தகவல்களையும் இந்த வீடியோவில் விரிவாகக் காணலாம். சிறந்த குறிப்புகள் மற்றும் தகவல்கள் சேர்க்கப்பட்டுள்ளன.`,
+          hashtags: `#${fallbackTitle.replace(/[^a-zA-Z0-9]/g, '')} #தமிழ் #Tamil #Viral #Trending`,
+          thumbnailTitle: 'தமிழ் விளக்கம்',
+          thumbnailSubtitle: 'முழு தகவல் 2026',
           thumbnailBgColor: '#0F172A',
           thumbnailTextColor: '#FACC15'
         };
@@ -96,11 +96,11 @@ PERFORM A SINGLE-HIT GENERATION and return ONLY a valid raw JSON object (no mark
         } catch (jsonErr) {
           console.warn('[GEMINI JSON PARSE FALLBACK]: Parsing failed, using raw response');
           parsedData = {
-            title: `${topic} - Complete Guide`,
+            title: `${topic} - தமிழ் விளக்கம்`,
             description: responseText.slice(0, 300),
-            hashtags: '#Viral #Trending #SocialMedia',
-            thumbnailTitle: topic.toUpperCase().slice(0, 20),
-            thumbnailSubtitle: 'Watch Now',
+            hashtags: '#தமிழ் #Tamil #Trending #SocialMedia',
+            thumbnailTitle: 'தமிழ் விளக்கம்',
+            thumbnailSubtitle: 'இப்போதே பாருங்கள்',
             thumbnailBgColor: '#1877F2',
             thumbnailTextColor: '#FFFFFF'
           };
@@ -139,13 +139,13 @@ PERFORM A SINGLE-HIT GENERATION and return ONLY a valid raw JSON object (no mark
 
   <!-- Badge Header -->
   <rect x="100" y="120" width="280" height="50" rx="25" fill="${thumbnailTextColor}"/>
-  <text x="240" y="153" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#000" text-anchor="middle">OFFICIAL TUTORIAL</text>
+  <text x="240" y="153" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Noto Sans Tamil, Latha, Arial, sans-serif" font-size="22" font-weight="bold" fill="#000" text-anchor="middle">சிறப்பு வீடியோ</text>
 
   <!-- Title Text -->
-  <text x="100" y="290" font-family="Impact, Arial, sans-serif" font-size="76" font-weight="900" fill="#FFFFFF" filter="url(#shadow)">${this.escapeXml(thumbnailTitle)}</text>
+  <text x="100" y="290" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Noto Sans Tamil, Latha, Arial, sans-serif" font-size="64" font-weight="900" fill="#FFFFFF" filter="url(#shadow)">${this.escapeXml(thumbnailTitle)}</text>
 
   <!-- Subtitle Text -->
-  <text x="100" y="380" font-family="Arial, sans-serif" font-size="44" font-weight="bold" fill="${thumbnailTextColor}" filter="url(#shadow)">${this.escapeXml(thumbnailSubtitle)}</text>
+  <text x="100" y="380" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Noto Sans Tamil, Latha, Arial, sans-serif" font-size="40" font-weight="bold" fill="${thumbnailTextColor}" filter="url(#shadow)">${this.escapeXml(thumbnailSubtitle)}</text>
 
   <!-- Play Button Icon Container -->
   <g transform="translate(1000, 480)" filter="url(#shadow)">
@@ -154,7 +154,7 @@ PERFORM A SINGLE-HIT GENERATION and return ONLY a valid raw JSON object (no mark
   </g>
 
   <!-- Footer Tag -->
-  <text x="100" y="600" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#94A3B8">AI GENERATED • HIGH QUALITY</text>
+  <text x="100" y="600" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Noto Sans Tamil, Latha, Arial, sans-serif" font-size="26" font-weight="bold" fill="#94A3B8">AI உருவாக்கம் • தமிழ்</text>
 </svg>
 `.trim();
 

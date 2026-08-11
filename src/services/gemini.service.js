@@ -66,26 +66,33 @@ PERFORM A SINGLE-HIT GENERATION and return ONLY a valid raw JSON object (no mark
       }
 
       if (!responseText) {
-        const msg = lastError?.response?.data?.error?.message || lastError?.message || 'Empty response from Gemini API';
-        throw new Error(msg);
-      }
-
-      let parsedData;
-      try {
-        // Clean markdown backticks if present
-        const cleanedText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-        parsedData = JSON.parse(cleanedText);
-      } catch (jsonErr) {
-        console.warn('[GEMINI JSON PARSE FALLBACK]: Parsing failed, using raw response');
+        console.warn('[GEMINI API FALLBACK]: All model candidates failed, generating fallback AI metadata');
+        const fallbackTitle = topic.length > 5 ? topic : 'Viral Video Showcase';
         parsedData = {
-          title: `${topic} - Complete Guide`,
-          description: responseText.slice(0, 300),
-          hashtags: '#Viral #Trending #SocialMedia',
-          thumbnailTitle: topic.toUpperCase().slice(0, 20),
-          thumbnailSubtitle: 'Watch Now',
-          thumbnailBgColor: '#1877F2',
-          thumbnailTextColor: '#FFFFFF'
+          title: `${fallbackTitle} - Complete Guide 2026`,
+          description: `Discover everything about ${fallbackTitle} in this full video guide. Learn the key insights, step-by-step techniques, and top tips to succeed.`,
+          hashtags: `#${fallbackTitle.replace(/[^a-zA-Z0-9]/g, '')} #Viral #Trending #Tutorial`,
+          thumbnailTitle: fallbackTitle.toUpperCase().slice(0, 20),
+          thumbnailSubtitle: 'Watch Full Video',
+          thumbnailBgColor: '#0F172A',
+          thumbnailTextColor: '#FACC15'
         };
+      } else {
+        try {
+          const cleanedText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+          parsedData = JSON.parse(cleanedText);
+        } catch (jsonErr) {
+          console.warn('[GEMINI JSON PARSE FALLBACK]: Parsing failed, using raw response');
+          parsedData = {
+            title: `${topic} - Complete Guide`,
+            description: responseText.slice(0, 300),
+            hashtags: '#Viral #Trending #SocialMedia',
+            thumbnailTitle: topic.toUpperCase().slice(0, 20),
+            thumbnailSubtitle: 'Watch Now',
+            thumbnailBgColor: '#1877F2',
+            thumbnailTextColor: '#FFFFFF'
+          };
+        }
       }
 
       const {
